@@ -48,11 +48,10 @@ async function search(q) {
 async function create(caso) {
   try {
     const created = await db("casos").insert(caso, ["*"]);
-    console.log("Created: ", created);
     if (!created) {
       return false;
     }
-    return created;
+    return created[0];
   } catch (error) {
     console.log(error);
     return false;

@@ -37,11 +37,11 @@ const CasoSchema = z.object({
 const CasoPartial = CasoSchema.partial().strict();
 
 async function getAll(req, res, next) {
-  const parsed = QueryParamsSchema.safeParse(req.query);
-  if (!parsed.success) {
-    return res.status(400).json({ message: parsed.error.issues[0].message });
-  }
   try {
+    const parsed = QueryParamsSchema.safeParse(req.query);
+    if (!parsed.success) {
+      return res.status(400).json({ message: parsed.error.issues[0].message });
+    }
     const { agente_id, status } = parsed.data;
 
     if (agente_id !== undefined && !Number.isInteger(Number(agente_id))) {
@@ -50,14 +50,8 @@ async function getAll(req, res, next) {
         .json({ message: "O agente_id deve ser um número inteiro." });
     }
 
-    const casosResult = await casosRepository
-      .getAll({ agente_id, status })
-      .then((casosResult) => {
-        return res.status(200).json(casosResult);
-      })
-      .catch((error) => {
-        next(error);
-      });
+    const casosResult = await casosRepository.getAll({ agente_id, status });
+    return res.status(200).json(casosResult);
   } catch (error) {
     next(error);
   }
@@ -71,9 +65,8 @@ async function search(req, res, next) {
     }
 
     const { q } = parsed.data;
-    const resultado = await casosRepository.search(q).then((resultado) => {
-      return res.status(200).json(resultado);
-    });
+    const resultado = await casosRepository.search(q);
+    return res.status(200).json(resultado);
   } catch (error) {
     next(error);
   }
@@ -86,29 +79,16 @@ async function create(req, res, next) {
       return res.status(400).json({ message: parsed.error.issues[0].message });
     }
 
-    const agente = await agentesRepository
-      .findById(parsed.data.agente_id)
-      .then((agente) => {
-        if (!agente) {
-          return res.status(404).json({ message: "Agente inexistente" });
-        }
-      })
-      .catch((error) => {
-        next(error);
-      });
+    const agente = await agentesRepository.findById(parsed.data.agente_id);
+    if (!agente) {
+      return res.status(404).json({ message: "Agente inexistente" });
+    }
 
-    const caso = await casosRepository
-      .create(parsed.data)
-      .then((caso) => {
-        return res.status(201).json(caso);
-        if (!caso) {
-          return res.status(500).json({ message: "Erro ao criar caso." });
-        }
-      })
-      .catch((error) => {
-        return res.status(500).json({ message: "Erro ao criar caso." });
-        next(error);
-      });
+    const caso = await casosRepository.create(parsed.data);
+    if (!caso) {
+      return res.status(500).json({ message: "Erro ao criar caso." });
+    }
+    return res.status(201).json(caso);
   } catch (error) {
     return res.status(500).json({ message: "Erro ao criar caso." });
     next(error);
@@ -119,17 +99,11 @@ async function getById(req, res, next) {
   try {
     const id = req.params.id;
 
-    const caso = await casosRepository
-      .findById(id)
-      .then((caso) => {
-        if (!caso) {
-          return res.status(404).json({ message: "Caso inexistente" });
-        }
-        return res.status(200).json(caso);
-      })
-      .catch((error) => {
-        next(error);
-      });
+    const caso = await casosRepository.findById(id);
+    if (!caso) {
+      return res.status(404).json({ message: "Caso inexistente" });
+    }
+    return res.status(200).json(caso);
   } catch (error) {
     next(error);
   }
@@ -150,28 +124,19 @@ async function update(req, res, next) {
         .json({ message: "O campo 'id' nao pode ser alterado." });
     }
 
-    const agente = await agentesRepository
-      .findById(parsed.data.agente_id)
-      .then((agente) => {
-        if (!agente) {
-          return res.status(404).json({ message: "Agente inexistente" });
-        }
-      })
-      .catch((error) => {
-        next(error);
-      });
+    const agente = await agentesRepository.findById(parsed.data.agente_id);
+    if (!agente) {
+      return res.status(404).json({ message: "Agente inexistente" });
+    }
 
-    const casosUpdated = await casosRepository
-      .update(id, Object.fromEntries(Object.entries(parsed.data)))
-      .then((casosUpdated) => {
-        if (!casosUpdated) {
-          return res.status(404).json({ message: "Caso inexistente" });
-        }
-        return res.status(200).json(casosUpdated);
-      })
-      .catch((error) => {
-        next(error);
-      });
+    const casosUpdated = await casosRepository.update(
+      id,
+      Object.fromEntries(Object.entries(parsed.data))
+    );
+    if (!casosUpdated) {
+      return res.status(404).json({ message: "Caso inexistente" });
+    }
+    return res.status(200).json(casosUpdated);
   } catch (error) {
     next(error);
   }
@@ -180,17 +145,11 @@ async function update(req, res, next) {
 async function deleteCaso(req, res, next) {
   try {
     const { id } = req.params;
-    const casosDeleted = await casosRepository
-      .deleteCaso(id)
-      .then((casosDeleted) => {
-        if (!casosDeleted) {
-          return res.status(404).json({ message: "Caso inexistente" });
-        }
-        return res.status(204).json();
-      })
-      .catch((error) => {
-        next(error);
-      });
+    const casosDeleted = await casosRepository.deleteCaso(id);
+    if (!casosDeleted) {
+      return res.status(404).json({ message: "Caso inexistente" });
+    }
+    return res.status(204).json();
   } catch (error) {
     next(error);
   }
@@ -212,29 +171,20 @@ async function patch(req, res, next) {
     }
 
     if (parsed.data.agente_id !== undefined) {
-      const agente = await agentesRepository
-        .findById(parsed.data.agente_id)
-        .then((agente) => {
-          if (!agente) {
-            return res.status(404).json({ message: "Agente inexistente" });
-          }
-        })
-        .catch((error) => {
-          next(error);
-        });
+      const agente = await agentesRepository.findById(parsed.data.agente_id);
+      if (!agente) {
+        return res.status(404).json({ message: "Agente inexistente" });
+      }
     }
 
-    const casosUpdated = await casosRepository
-      .update(id, Object.fromEntries(Object.entries(parsed.data)))
-      .then((casosUpdated) => {
-        if (!casosUpdated) {
-          return res.status(404).json({ message: "Caso inexistente" });
-        }
-        return res.status(200).json(casosUpdated);
-      })
-      .catch((error) => {
-        next(error);
-      });
+    const casosUpdated = await casosRepository.update(
+      id,
+      Object.fromEntries(Object.entries(parsed.data))
+    );
+    if (!casosUpdated) {
+      return res.status(404).json({ message: "Caso inexistente" });
+    }
+    return res.status(200).json(casosUpdated);
   } catch (error) {
     next(error);
   }
@@ -251,17 +201,11 @@ async function getAgente(req, res, next) {
       return caso;
     });
 
-    const agente = await agentesRepository
-      .findById(caso.agente_id)
-      .then((agente) => {
-        if (!agente) {
-          return res.status(404).json({ message: "Agente inexistente" });
-        }
-        return res.status(200).json(agente);
-      })
-      .catch((error) => {
-        next(error);
-      });
+    const agente = await agentesRepository.findById(caso.agente_id);
+    if (!agente) {
+      return res.status(404).json({ message: "Agente inexistente" });
+    }
+    return res.status(200).json(agente);
   } catch (error) {
     next(error);
   }

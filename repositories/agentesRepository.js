@@ -68,7 +68,7 @@ async function updateAgente(id, fieldsToUpdate) {
     if (!updateAgente) {
       return false;
     }
-    return updateAgente;
+    return updateAgente[0];
   } catch (error) {
     console.log(error.where);
     return false;

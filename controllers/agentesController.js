@@ -37,17 +37,11 @@ async function findAll(req, res, next) {
 
     const { cargo, sort } = parsed.data;
 
-    const agentes = await agentesRepository
-      .findAll({
-        cargo,
-        sort,
-      })
-      .then((agentes) => {
-        return res.status(200).json(agentes);
-      })
-      .catch((error) => {
-        next(error);
-      });
+    const agentes = await agentesRepository.findAll({
+      cargo,
+      sort,
+    });
+    return res.status(200).json(agentes);
   } catch (error) {
     next(error);
   }
@@ -56,17 +50,11 @@ async function findAll(req, res, next) {
 async function findById(req, res, next) {
   try {
     const id = req.params.id;
-    const agente = await agentesRepository
-      .find(id)
-      .then((agente) => {
-        if (!agente) {
-          return res.status(404).json({ message: "Agente inexistente" });
-        }
-        return res.status(200).json(agente);
-      })
-      .catch((error) => {
-        next(error);
-      });
+    const agente = await agentesRepository.find(id);
+    if (!agente) {
+      return res.status(404).json({ message: "Agente inexistente" });
+    }
+    return res.status(200).json(agente);
   } catch (error) {
     next(error);
   }
@@ -79,17 +67,11 @@ async function create(req, res, next) {
       return res.status(400).json({ message: parsed.error.issues[0].message });
     }
 
-    const agente = await agentesRepository
-      .create(parsed.data)
-      .then((agente) => {
-        if (!agente) {
-          return res.status(500).json({ message: "Erro ao criar agente." });
-        }
-        return res.status(201).json(agente);
-      })
-      .catch((error) => {
-        next(error);
-      });
+    const agente = await agentesRepository.create(parsed.data);
+    if (!agente) {
+      return res.status(500).json({ message: "Erro ao criar agente." });
+    }
+    return res.status(201).json(agente);
   } catch (error) {
     next(error);
   }
@@ -98,12 +80,11 @@ async function create(req, res, next) {
 async function deleteAgente(req, res, next) {
   try {
     const { id } = req.params;
-    const deleted = await agentesRepository.deleteAgente(id).then((deleted) => {
-      if (!deleted) {
-        return res.status(404).json({ message: "Agente inexistente" });
-      }
-      return res.status(204).send();
-    });
+    const deleted = await agentesRepository.deleteAgente(id);
+    if (!deleted) {
+      return res.status(404).json({ message: "Agente inexistente" });
+    }
+    return res.status(204).send();
   } catch (error) {
     console.log(error);
     next(error);
@@ -123,24 +104,19 @@ async function updateAgente(req, res, next) {
     if (!parsed.success) {
       return res.status(400).json({ message: parsed.error.issues[0].message });
     }
-    console.log(parsed.data);
 
-    const agenteUpdated = await agentesRepository
-      .updateAgente(id, Object.fromEntries(Object.entries(parsed.data)))
-      .then((agenteUpdated) => {
-        if (!agenteUpdated) {
-          return res.status(404).json({ message: "Agente inexistente" });
-        }
-        return res.status(200).json(agenteUpdated);
-      })
-      .catch((error) => {
-        next(error);
-      });
+    const agenteUpdated = await agentesRepository;
+    if (!agenteUpdated) {
+      return res.status(404).json({ message: "Agente inexistente" });
+    }
+
     if (agenteUpdated === null) {
       return res
         .status(404)
         .json({ message: "Agente não atualizado/não encontrado" });
     }
+
+    return res.status(200).json(agenteUpdated);
   } catch (error) {
     next(error);
   }
@@ -161,22 +137,20 @@ async function patch(req, res, next) {
       return res.status(400).json({ message: parsed.error.issues[0].message });
     }
 
-    const agenteUpdated = await agentesRepository
-      .updateAgente(id, Object.fromEntries(Object.entries(parsed.data)))
-      .then((agenteUpdated) => {
-        if (!agenteUpdated) {
-          return res.status(404).json({ message: "Agente inexistente" });
-        }
-        return res.status(200).json(agenteUpdated);
-      })
-      .catch((error) => {
-        next(error);
-      });
+    const agenteUpdated = await agentesRepository.updateAgente(
+      id,
+      Object.fromEntries(Object.entries(parsed.data))
+    );
+    if (!agenteUpdated) {
+      return res.status(404).json({ message: "Agente inexistente" });
+    }
     if (agenteUpdated === null) {
       return res
         .status(404)
         .json({ message: "Agente não atualizado/não encontrado" });
     }
+
+    return res.status(200).json(agenteUpdated);
   } catch (error) {
     next(error);
   }
