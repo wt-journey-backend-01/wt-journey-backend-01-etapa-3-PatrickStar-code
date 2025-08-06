@@ -1,285 +1,291 @@
 <sup>Esse é um feedback gerado por IA, ele pode conter erros.</sup>
 
-Você tem 8 créditos restantes para usar o sistema de feedback AI.
+Você tem 7 créditos restantes para usar o sistema de feedback AI.
 
 # Feedback para PatrickStar-code:
 
-Nota final: **39.6/100**
+Nota final: **70.0/100**
 
-Olá, PatrickStar-code! 🚀✨
+# Feedback para você, PatrickStar-code! 🚀✨
 
-Primeiramente, parabéns pelo esforço em migrar sua API para usar PostgreSQL com Knex.js! 🎉 Isso é um passo enorme e fundamental para construir aplicações escaláveis e robustas. Também notei que você já conseguiu implementar várias validações de dados com Zod e estruturou seu projeto com rotas, controladores e repositórios — isso mostra que você está no caminho certo para uma arquitetura limpa e modular. Além disso, você já fez um bom trabalho retornando status HTTP adequados para erros de validação e recursos não encontrados, o que é essencial para uma API REST profissional. 👏👏
+Olá, Patrick! Primeiro, parabéns pela dedicação nesse desafio de persistência com PostgreSQL e Knex.js! 🎉 Você já conseguiu implementar várias funcionalidades importantes, como a criação, leitura e atualização parcial (PATCH) dos agentes e casos, além de garantir validações e tratamento de erros em boa parte do código. Isso mostra que você tem uma ótima base e está no caminho certo para construir APIs robustas! 👏
 
----
-
-## Vamos entender juntos onde podemos melhorar para destravar tudo? 🕵️‍♂️🔍
-
-### 1. Configuração e conexão com o banco de dados: o alicerce de tudo!
-
-Antes de mais nada, o primeiro passo para garantir que sua API funcione bem com o banco é garantir que a conexão com o PostgreSQL via Knex está correta. Pelo que vi, seu arquivo `knexfile.js` está configurado assim:
-
-```js
-development: {
-  client: "pg",
-  connection: {
-    host: "127.0.0.1",
-    port: 5432,
-    user: process.env.POSTGRES_USER,
-    password: process.env.POSTGRES_PASSWORD,
-    database: process.env.POSTGRES_DB,
-  },
-  migrations: {
-    directory: "./db/migrations",
-  },
-  seeds: {
-    directory: "./db/seeds",
-  },
-},
-```
-
-E seu `docker-compose.yml` define o serviço `postgres-db` com container name `postgres-database`. Aqui já temos um pequeno desalinho: no `knexfile.js`, o host está `127.0.0.1`, mas no Docker, o container se chama `postgres-database`. Se você estiver rodando sua API localmente fora do container, `127.0.0.1` funciona, mas se a API estiver rodando dentro de outro container (ou se houver algum problema de rede), pode ser que a conexão falhe.
-
-**Dica:** Certifique-se que seu `.env` está configurado corretamente com as variáveis `POSTGRES_USER`, `POSTGRES_PASSWORD` e `POSTGRES_DB`. Além disso, confira se o banco está realmente rodando e se as migrations foram aplicadas com sucesso.
-
-Recomendo fortemente assistir este vídeo para entender essa configuração e garantir que o banco está acessível para sua aplicação:  
-📺 [Configuração de Banco de Dados com Docker e Knex](http://googleusercontent.com/youtube.com/docker-postgresql-node)
+Além disso, percebi que você foi além do básico e implementou filtros simples para casos por status e agente, o que é um bônus muito legal! 🎯 Isso demonstra seu interesse em entregar funcionalidades extras, parabéns por isso!
 
 ---
 
-### 2. Migrations e Seeds: o passo que garante a estrutura e dados no banco
+## Vamos analisar juntos os pontos que podem ser melhorados para destravar o restante da aplicação? 🕵️‍♂️🔍
 
-Você tem as migrations e seeds, mas será que elas foram executadas corretamente? Se as tabelas `agentes` e `casos` não existirem no banco, todas as queries vão falhar silenciosamente ou retornar resultados vazios.
+### 1. **Atualização completa (PUT) dos agentes não está funcionando como esperado**
 
-Verifique se as migrations criaram as tabelas com os campos corretos (especialmente os tipos e os nomes dos campos, como `id`, `agente_id`, `dataDeIncorporacao` etc). Se os campos estiverem com nomes diferentes, seu código pode estar buscando colunas que não existem.
-
-No seu seed de agentes, por exemplo, você insere assim:
+Ao analisar seu `agentesController.js`, especificamente a função `updateAgente`, percebi um problema fundamental que está impedindo a atualização completa do agente:
 
 ```js
-await knex("agentes").insert([
-  {
-    id: 1,
-    nome: "Rommel Carneiro",
-    dataDeIncorporacao: "1992-10-04",
-    cargo: "delegado",
-  },
-  // ...
-]);
-```
-
-Isso está ótimo, mas se a tabela `agentes` não tiver o campo `dataDeIncorporacao` (ou se estiver com outro nome, tipo `data_de_incorporacao`), a inserção pode falhar ou os dados podem não estar acessíveis como esperado.
-
-Para garantir que as migrations e seeds foram aplicadas, rode os comandos:
-
-```bash
-npx knex migrate:latest
-npx knex seed:run
-```
-
-E depois entre no container do banco para verificar:
-
-```bash
-docker exec -it postgres-database psql -U <seu_usuario> -d <seu_banco>
-```
-
-E execute:
-
-```sql
-SELECT * FROM agentes;
-SELECT * FROM casos;
-```
-
-Se as tabelas estiverem vazias ou não existirem, este é o motivo principal das falhas nas suas operações CRUD.
-
-Mais detalhes sobre migrations e seeds aqui:  
-📚 [Knex Migrations](https://knexjs.org/guide/migrations.html)  
-📚 [Knex Query Builder](https://knexjs.org/guide/query-builder.html)  
-📺 [Knex Seeds](http://googleusercontent.com/youtube.com/knex-seeds)
-
----
-
-### 3. Repositórios: atenção ao retorno das queries!
-
-No seu `agentesRepository.js`, por exemplo, a função `updateAgente` está assim:
-
-```js
-async function updateAgente(id, fieldsToUpdate) {
+async function updateAgente(req, res, next) {
   try {
-    const updateAgente = await db("agentes")
-      .where({ id: id })
-      .update(fieldsToUpdate, ["*"]);
-    if (!updateAgente) {
-      return false;
+    const { id } = req.params;
+
+    if ("id" in req.body) {
+      return res
+        .status(400)
+        .json({ message: "O campo 'id' nao pode ser alterado." });
     }
-    return updateAgente;
+    const parsed = AgenteSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ message: parsed.error.issues[0].message });
+    }
+
+    // Aqui está o problema:
+    const agenteUpdated = await agentesRepository;
+    if (!agenteUpdated) {
+      return res.status(404).json({ message: "Agente inexistente" });
+    }
+
+    if (agenteUpdated === null) {
+      return res
+        .status(404)
+        .json({ message: "Agente não atualizado/não encontrado" });
+    }
+
+    return res.status(200).json(agenteUpdated);
   } catch (error) {
-    console.log(error.where);
-    return false;
+    next(error);
   }
 }
 ```
 
-Aqui tem um detalhe importante: o método `.update()` do Knex com PostgreSQL retorna um array com os registros atualizados (quando você passa `["*"]`), ou o número de linhas afetadas, dependendo da versão do Knex e do banco. Você está retornando `updateAgente` diretamente, mas no controller espera um objeto, não um array.
+**O que está errado aqui?**
 
-Por exemplo, se `updateAgente` for um array, seu controller pode estar retornando um array em vez do objeto esperado, o que pode confundir os testes ou clientes da API.
-
-**Sugestão:** Retorne o primeiro elemento do array, assim:
+- Você está atribuindo `agentesRepository` inteiro à variável `agenteUpdated`, mas não está chamando a função que deveria atualizar o agente no banco.
+- Falta a chamada para a função que realiza a atualização, provavelmente algo como:
 
 ```js
-return updateAgente[0];
+const agenteUpdated = await agentesRepository.updateAgente(id, parsed.data);
 ```
 
-O mesmo vale para o `update` no `casosRepository.js`:
+Sem essa chamada, seu código não está pedindo para o banco atualizar o agente, e por isso a resposta não tem o agente atualizado.
+
+---
+
+### 2. **Busca de agente por ID no `casosController` está com inconsistência**
+
+Na função `create` do `casosController.js`, você chama:
 
 ```js
-async function update(id, fieldsToUpdate) {
+const agente = await agentesRepository.findById(parsed.data.agente_id);
+```
+
+Mas no seu `agentesRepository.js`, o método que você exporta para buscar agente por ID é chamado de `findById`, certo? Isso está correto.
+
+No entanto, no `agentesController.js` você usa `find` para buscar o agente por ID:
+
+```js
+async function findById(id) {
   try {
-    const updated = await db("casos")
-      .where({ id: id })
-      .update(fieldsToUpdate, ["*"]);
-    if (!updated) {
+    const findIndex = await db("agentes").where({ id: id });
+    if (findIndex.length === 0) {
       return false;
     }
-    return updated[0]; // <-- aqui
+    return findIndex[0];
   } catch (error) {
     console.log(error);
-    return false;
+    return error.where;
   }
 }
 ```
 
-Além disso, na função `create` do `casosRepository.js`, você está retornando `created` (que é um array), mas no controller espera um objeto. Faça o mesmo ajuste:
+Mas no `agentesController.js` você chama `agentesRepository.find(id)` (note o método `find`, que não existe no `agentesRepository.js`). Isso causa inconsistência e pode levar a erros.
 
-```js
-return created[0];
-```
-
-Esse detalhe é fundamental para o correto funcionamento dos endpoints de criação e atualização.
+**Recomendo padronizar o nome do método para `findById` em todos os lugares**, para evitar confusão e bugs.
 
 ---
 
-### 4. Controllers: cuidado com o fluxo assíncrono e retorno de respostas
+### 3. **Filtros e ordenação para agentes por data de incorporação (bonus) não estão funcionando**
 
-No seu `casosController.js`, na função `create`, percebi uma questão importante no fluxo:
+Você implementou o filtro por cargo e ordenação por data de incorporação no `agentesRepository.js`:
 
 ```js
-const agente = await agentesRepository
-  .findById(parsed.data.agente_id)
-  .then((agente) => {
+async function findAll({ cargo, sort } = {}) {
+  try {
+    const search = db.select("*").from("agentes");
+    if (cargo) {
+      search.where({ cargo: cargo });
+    }
+    if (sort) {
+      if (sort === "dataDeIncorporacao") {
+        search.orderBy("dataDeIncorporacao", "asc");
+      } else if (sort === "-dataDeIncorporacao") {
+        search.orderBy("dataDeIncorporacao", "desc");
+      }
+    }
+    if (!search) {
+      return false;
+    }
+    return await search;
+  } catch (error) {
+    console.log(error);
+    return error.where;
+  }
+}
+```
+
+Aqui, a lógica está boa, mas atenção: o método `search` é um objeto do Knex, e ele sempre será truthy, então o `if (!search)` nunca será verdadeiro. Esse `if` pode ser removido.
+
+Além disso, certifique-se que o campo na tabela do banco está nomeado exatamente como `dataDeIncorporacao` e que as migrations criaram esse campo com o nome correto (case sensitive). Caso contrário, a ordenação não funcionará.
+
+---
+
+### 4. **Endpoint para buscar agente responsável por um caso não está implementado corretamente**
+
+Você tem a rota:
+
+```js
+router.get("/:casos_id/agente", casosController.getAgente);
+```
+
+No `casosController.js`, a função `getAgente` está assim:
+
+```js
+async function getAgente(req, res, next) {
+  try {
+    const { casos_id } = req.params;
+
+    const caso = await casosRepository.findById(casos_id).then((caso) => {
+      if (!caso) {
+        return res.status(404).json({ message: "Caso inexistente" });
+      }
+      return caso;
+    });
+
+    const agente = await agentesRepository.findById(caso.agente_id);
     if (!agente) {
       return res.status(404).json({ message: "Agente inexistente" });
     }
-  })
-  .catch((error) => {
+    return res.status(200).json(agente);
+  } catch (error) {
     next(error);
-  });
-
-const caso = await casosRepository
-  .create(parsed.data)
-  .then((caso) => {
-    return res.status(201).json(caso);
-    if (!caso) {
-      return res.status(500).json({ message: "Erro ao criar caso." });
-    }
-  })
-  .catch((error) => {
-    return res.status(500).json({ message: "Erro ao criar caso." });
-    next(error);
-  });
-```
-
-Aqui, você usa `.then()` e `await` juntos, o que não é necessário e pode confundir o fluxo. Além disso, dentro do `.then()` você tem um `return res.status(201).json(caso);` antes do `if (!caso)`, então o `if` nunca será executado.
-
-Também, no primeiro `.then()`, se o agente não existir, você envia a resposta, mas o código continua executando a criação do caso, o que pode gerar erros ou múltiplas respostas.
-
-**Melhor forma:** Use `await` com `try/catch` e faça os retornos de resposta de forma clara e sequencial, assim:
-
-```js
-try {
-  const agente = await agentesRepository.findById(parsed.data.agente_id);
-  if (!agente) {
-    return res.status(404).json({ message: "Agente inexistente" });
   }
-
-  const caso = await casosRepository.create(parsed.data);
-  if (!caso) {
-    return res.status(500).json({ message: "Erro ao criar caso." });
-  }
-
-  return res.status(201).json(caso);
-} catch (error) {
-  next(error);
 }
 ```
 
-Isso evita que o código continue rodando após enviar uma resposta, e melhora a legibilidade. O mesmo padrão pode ser aplicado em outros controllers.
+**Problema detectado:**
 
----
+- Você usa `.then()` dentro de um `await`, o que não é necessário e pode causar problemas de fluxo.
+- Caso o `caso` não exista, você retorna direto a resposta, mas ainda assim a função vai continuar executando e tentar buscar o agente, o que pode gerar erro.
 
-### 5. Validação dos parâmetros e tipos: coerência entre schemas e banco
-
-No seu `casosController.js`, o `CasoSchema` define `agente_id` como número:
+**Sugestão para corrigir:**
 
 ```js
-agente_id: z
-  .number({ required_error: "Agente_id é obrigatório." })
-  .min(1, "O campo 'agente_id' é obrigatório."),
+async function getAgente(req, res, next) {
+  try {
+    const { casos_id } = req.params;
+
+    const caso = await casosRepository.findById(casos_id);
+    if (!caso) {
+      return res.status(404).json({ message: "Caso inexistente" });
+    }
+
+    const agente = await agentesRepository.findById(caso.agente_id);
+    if (!agente) {
+      return res.status(404).json({ message: "Agente inexistente" });
+    }
+    return res.status(200).json(agente);
+  } catch (error) {
+    next(error);
+  }
+}
 ```
 
-Mas no banco, o `agente_id` pode estar como string (se for UUID) ou número, dependendo da migration. Pelo seu seed, vejo que `agente_id` é um número (ex: `1`, `2`), então está coerente.
-
-Só fique atento para garantir que os tipos no banco e no schema estejam alinhados, para evitar erros de conversão ou falhas ao buscar os dados.
+Assim, a função fica mais clara e evita problemas de fluxo.
 
 ---
 
-### 6. Organização e estrutura do projeto: está quase lá!
+### 5. **Validação de IDs e tipos no Controller de Casos**
 
-Sua estrutura de arquivos está muito próxima do esperado, o que é ótimo! Só um ponto para ficar atento:
+Notei que no `casosController.js`, na validação de `agente_id` nos query params e no payload, você usa `zod` para validar que `agente_id` é um número, mas no banco você está usando IDs numéricos para agentes, enquanto o código do aluno parece misturar `string` e `number` em alguns lugares.
 
-- O arquivo `db.js` está correto dentro da pasta `db/`.
-- As migrations e seeds estão dentro de `db/migrations` e `db/seeds`, respectivamente.
-- Rotas, controladores e repositórios estão bem separados.
+Por exemplo, na seed dos agentes, os IDs são números:
 
-Isso é essencial para manter o projeto escalável e fácil de manter. Se quiser dar uma reforçada no conceito MVC aplicado a Node.js, recomendo este vídeo:  
-📺 [Arquitetura MVC para Node.js](https://youtu.be/bGN_xNc4A1k?si=Nj38J_8RpgsdQ-QH)
+```js
+{
+  id: 1,
+  nome: "Rommel Carneiro",
+  dataDeIncorporacao: "1992-10-04",
+  cargo: "delegado",
+}
+```
+
+Mas no comentário do `casosRepository.js`, os IDs parecem strings (UUIDs):
+
+```js
+/*
+   {
+        id: "f5fb2ad5-22a8-4cb4-90f2-8733517a0d46",
+        titulo: "homicidio",
+        ...
+        agente_id: "401bccf5-cf9e-489d-8412-446cd169a0f1" 
+    }
+*/
+```
+
+Essa inconsistência pode gerar erros de busca e falha na associação entre casos e agentes.
+
+**Recomendo padronizar o uso de IDs:**
+
+- Se você está usando IDs numéricos no banco e nas seeds, mantenha isso em toda a aplicação.
+- Caso queira usar UUIDs, ajuste as migrations, seeds e validações para refletir isso.
 
 ---
 
-### 7. Pontos extras que você já acertou! 🎖️
+### 6. **Verificação da estrutura do projeto**
 
-- Implementou validações com Zod para garantir que os dados recebidos estão no formato esperado.
-- Tratamento de erros com status HTTP corretos (400 para dados inválidos, 404 para recursos não encontrados).
-- Uso correto do Knex para construir queries, usando `.select()`, `.insert()`, `.update()`, `.del()` com parâmetros.
-- Modularização do código em controllers, repositories e rotas, facilitando manutenção e testes.
-- Documentação Swagger para rotas, o que é excelente para API pública e para times.
+Sua estrutura está quase perfeita, porém, faltou o arquivo `.env` para que o Knex e o Docker possam ler as variáveis de ambiente corretamente, como `POSTGRES_USER`, `POSTGRES_PASSWORD` e `POSTGRES_DB`.
 
----
+Sem esse arquivo, a conexão com o banco pode falhar, e isso impacta toda a persistência.
 
-## Resumo do que focar para melhorar e garantir que tudo funcione perfeitamente 🔑
+Além disso, recomendo verificar se o seu `docker-compose.yml` está subindo o container com o nome correto, pois no seu arquivo aparece:
 
-- [ ] **Verifique a conexão com o banco:** Confirme se seu `.env` está configurado e o banco está rodando, e se o host no `knexfile.js` está correto para seu ambiente (localhost vs container Docker).  
-- [ ] **Execute as migrations e seeds:** Garanta que as tabelas `agentes` e `casos` existem e estão populadas corretamente.  
-- [ ] **Ajuste os retornos dos métodos `update` e `create` nos repositórios:** Retorne o objeto atualizado/criado (`array[0]`), não o array inteiro ou número de linhas.  
-- [ ] **Refatore os controllers para usar `async/await` sem `.then()`, e evite continuar a execução após enviar resposta:** Isso previne bugs de múltiplas respostas e melhora o fluxo.  
-- [ ] **Confirme a coerência dos tipos entre schemas Zod e banco de dados:** Evite erros de tipo, especialmente para `id` e `agente_id`.  
-- [ ] **Continue mantendo a estrutura modular e limpa do projeto:** Isso facilitará a manutenção e evolução da API.
+```yml
+services:
+  postgres-db:
+    container_name: postgres-database
+    ...
+```
+
+Mas no INSTRUCTIONS.md você acessa o container com o nome `postgres-database`. Está consistente, o que é ótimo!
 
 ---
 
-Patrick, você está muito próximo de uma solução completa e profissional! 🚀✨ Com esses ajustes, sua API vai funcionar perfeitamente e você vai se sentir muito mais confiante para desafios futuros. Continue praticando e buscando entender cada camada da aplicação — isso é o que faz um desenvolvedor se destacar! 👊💥
+## Recursos para te ajudar a aprimorar ainda mais seu projeto! 📚✨
 
-Se quiser reforçar os conceitos sobre Knex, validação e estrutura de projetos Node.js, aqui estão os links que vão te ajudar bastante:
+- Para corrigir a atualização de dados e manipulação correta das funções no controller, veja este vídeo sobre [Manipulação de Requisições e Respostas HTTP no Express](https://youtu.be/RSZHvQomeKE) — vai te ajudar a entender como chamar funções e retornar status codes adequadamente.
 
-- [Configuração de Banco de Dados com Docker e Knex](http://googleusercontent.com/youtube.com/docker-postgresql-node)  
-- [Knex Migrations](https://knexjs.org/guide/migrations.html)  
-- [Knex Query Builder](https://knexjs.org/guide/query-builder.html)  
-- [Knex Seeds](http://googleusercontent.com/youtube.com/knex-seeds)  
-- [Arquitetura MVC para Node.js](https://youtu.be/bGN_xNc4A1k?si=Nj38J_8RpgsdQ-QH)  
-- [Validação de dados em APIs Node.js](https://youtu.be/yNDCRAz7CM8?si=Lh5u3j27j_a4w3A_)  
+- Para entender melhor a configuração do banco com Docker e Knex, especialmente variáveis de ambiente e migrations, recomendo fortemente o vídeo [Configuração de Banco de Dados com Docker e Knex](http://googleusercontent.com/youtube.com/docker-postgresql-node) e a [documentação oficial do Knex sobre migrations](https://knexjs.org/guide/migrations.html).
 
-Estou aqui torcendo pelo seu sucesso! Qualquer dúvida, só chamar que a gente destrincha juntos! 🚀💙
+- Caso queira aprimorar a validação e tratamento de erros, o vídeo [Validação de Dados e Tratamento de Erros na API](https://youtu.be/yNDCRAz7CM8?si=Lh5u3j27j_a4w3A_) é excelente para garantir respostas claras e corretas para o cliente.
 
-Abraços,  
-Seu Code Buddy 🤖✨
+- Para organizar melhor seu projeto e entender a arquitetura MVC, dê uma olhada neste vídeo: [Arquitetura MVC em Node.js](https://youtu.be/bGN_xNc4A1k?si=Nj38J_8RpgsdQ-QH). Isso vai te ajudar a manter seu código limpo e modular.
+
+---
+
+## Resumo rápido para você focar nos próximos passos: 📋
+
+- [ ] Corrigir a função `updateAgente` para chamar o método correto do repository e atualizar o agente no banco.
+- [ ] Padronizar o nome do método para buscar agente por ID para `findById` em todo o código.
+- [ ] Ajustar a função `getAgente` no `casosController` para evitar uso desnecessário de `.then()` com `await`.
+- [ ] Verificar e padronizar o tipo dos IDs (numérico ou UUID) para agentes e casos em todo o projeto.
+- [ ] Remover condições desnecessárias (como `if (!search)` em queries Knex) para evitar confusão.
+- [ ] Garantir que o arquivo `.env` esteja presente e configurado corretamente para o Knex e Docker.
+- [ ] Revisar as migrations para garantir que os nomes dos campos estejam corretos e em conformidade com o código.
+- [ ] Continuar investindo em validação de dados e tratamento de erros para respostas HTTP claras.
+
+---
+
+Patrick, você já tem uma base muito boa e está caminhando para se tornar um mestre em APIs REST com Node.js e PostgreSQL! 💪✨ Continue assim, revisando cada ponto com calma, testando suas rotas e validando as respostas. Se precisar, volte aos recursos que indiquei para consolidar seu conhecimento.
+
+Estou aqui torcendo pelo seu sucesso e disponível para te ajudar sempre que precisar! 🚀👊
+
+Um abraço e continue codando com paixão! 💙🔥
 
 > Caso queira tirar uma dúvida específica, entre em contato com o Chapter no nosso [discord](https://discord.gg/DryuHVnz).
 
