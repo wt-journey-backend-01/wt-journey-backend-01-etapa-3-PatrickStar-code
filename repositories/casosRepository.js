@@ -11,7 +11,7 @@ const db = require("../db/db");
     
     }*/
 
-function getAll({ agente_id, status } = {}) {
+async function getAll({ agente_id, status } = {}) {
   try {
     const search = db.select("*").from("casos");
     if (agente_id) {
@@ -23,14 +23,14 @@ function getAll({ agente_id, status } = {}) {
     if (!search) {
       return false;
     }
-    return search;
+    return await search;
   } catch (error) {
     console.log(error);
     return false;
   }
 }
 
-function search(q) {
+async function search(q) {
   try {
     const query = db.select("*").from("casos");
     query.where("titulo", "like", `%${q}%`);
@@ -38,16 +38,16 @@ function search(q) {
     if (!query) {
       return false;
     }
-    return query;
+    return await query;
   } catch (error) {
     console.log(error);
     return false;
   }
 }
 
-function create(caso) {
+async function create(caso) {
   try {
-    const created = db("casos").insert(caso, ["*"]);
+    const created = await db("casos").insert(caso, ["*"]);
     console.log("Created: ", created);
     if (!created) {
       return false;
@@ -58,10 +58,10 @@ function create(caso) {
     return false;
   }
 }
-function findById(id) {
+async function findById(id) {
   try {
-    const findIndex = db("casos").where({ id: id });
-    if (!findIndex) {
+    const findIndex = await db("casos").where({ id: id });
+    if (findIndex.length === 0) {
       return false;
     }
     return findIndex[0];
@@ -71,9 +71,11 @@ function findById(id) {
   }
 }
 
-function update(id, fieldsToUpdate) {
+async function update(id, fieldsToUpdate) {
   try {
-    const updated = db("casos").where({ id: id }).update(fieldsToUpdate, ["*"]);
+    const updated = await db("casos")
+      .where({ id: id })
+      .update(fieldsToUpdate, ["*"]);
     if (!updated) {
       return false;
     }
@@ -84,9 +86,9 @@ function update(id, fieldsToUpdate) {
   }
 }
 
-function deleteCaso(id) {
+async function deleteCaso(id) {
   try {
-    const deleted = db("casos").where({ id: id }).del(["*"]);
+    const deleted = await db("casos").where({ id: id }).del(["*"]);
     if (!deleted) {
       return false;
     }

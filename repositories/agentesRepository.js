@@ -1,7 +1,7 @@
 const express = require("express");
 const db = require("../db/db");
 
-function findAll({ cargo, sort } = {}) {
+async function findAll({ cargo, sort } = {}) {
   try {
     const search = db.select("*").from("agentes");
     if (cargo) {
@@ -17,17 +17,17 @@ function findAll({ cargo, sort } = {}) {
     if (!search) {
       return false;
     }
-    return search;
+    return await search;
   } catch (error) {
     console.log(error);
     return error.where;
   }
 }
 
-function findById(id) {
+async function findById(id) {
   try {
-    const findIndex = db("agentes").where({ id: id });
-    if (!findIndex) {
+    const findIndex = await db("agentes").where({ id: id });
+    if (findIndex.length === 0) {
       return false;
     }
     return findIndex[0];
@@ -37,9 +37,9 @@ function findById(id) {
   }
 }
 
-function create(agente) {
+async function create(agente) {
   try {
-    const created = db("agentes").insert(agente, ["*"]);
+    const created = await db("agentes").insert(agente, ["*"]);
     return created[0];
   } catch (error) {
     console.log(error);
@@ -47,9 +47,9 @@ function create(agente) {
   }
 }
 
-function deleteAgente(id) {
+async function deleteAgente(id) {
   try {
-    const deleted = db("agentes").where({ id: id }).del(["*"]);
+    const deleted = await db("agentes").where({ id: id }).del(["*"]);
     if (!deleted) {
       return false;
     }
@@ -60,9 +60,9 @@ function deleteAgente(id) {
   }
 }
 
-function updateAgente(id, fieldsToUpdate) {
+async function updateAgente(id, fieldsToUpdate) {
   try {
-    const updateAgente = db("agentes")
+    const updateAgente = await db("agentes")
       .where({ id: id })
       .update(fieldsToUpdate, ["*"]);
     if (!updateAgente) {

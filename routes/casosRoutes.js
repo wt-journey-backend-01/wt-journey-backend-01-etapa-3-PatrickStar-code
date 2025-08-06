@@ -19,8 +19,7 @@ const casosController = require("../controllers/casosController");
  *       - in: query
  *         name: agente_id
  *         schema:
- *           type: string
- *           format: uuid
+ *           type: number
  *         required: false
  *         description: Filtra por agente responsável
  *       - in: query
@@ -77,8 +76,7 @@ router.get("/search", casosController.search);
  *                 type: string
  *                 enum: [aberto, solucionado]
  *               agente_id:
- *                 type: string
- *                 format: uuid
+ *                 type: number
  *     responses:
  *       201:
  *         description: Caso criado com sucesso
@@ -100,8 +98,7 @@ router.post("/", casosController.create);
  *         name: id
  *         required: true
  *         schema:
- *           type: string
- *           format: uuid
+ *           type: number
  *     responses:
  *       200:
  *         description: Caso encontrado
@@ -123,8 +120,7 @@ router.get("/:id", casosController.getById);
  *         name: id
  *         required: true
  *         schema:
- *           type: string
- *           format: uuid
+ *           type: number
  *     requestBody:
  *       required: true
  *       content:
@@ -141,8 +137,7 @@ router.get("/:id", casosController.getById);
  *                 type: string
  *                 enum: [aberto, solucionado]
  *               agente_id:
- *                 type: string
- *                 format: uuid
+ *                 type: number
  *     responses:
  *       200:
  *         description: Caso atualizado com sucesso
@@ -164,8 +159,7 @@ router.put("/:id", casosController.update);
  *         name: id
  *         required: true
  *         schema:
- *           type: string
- *           format: uuid
+ *           type: number
  *     requestBody:
  *       required: true
  *       content:
@@ -181,8 +175,7 @@ router.put("/:id", casosController.update);
  *                 type: string
  *                 enum: [aberto, solucionado]
  *               agente_id:
- *                 type: string
- *                 format: uuid
+ *                 type: number
  *     responses:
  *       200:
  *         description: Caso atualizado com sucesso
@@ -204,8 +197,7 @@ router.patch("/:id", casosController.patch);
  *         name: id
  *         required: true
  *         schema:
- *           type: string
- *           format: uuid
+ *           type: number
  *     responses:
  *       204:
  *         description: Caso deletado com sucesso
@@ -227,8 +219,7 @@ router.delete("/:id", casosController.deleteCaso);
  *         name: casos_id
  *         required: true
  *         schema:
- *           type: string
- *           format: uuid
+ *           type: number
  *     responses:
  *       200:
  *         description: Agente encontrado

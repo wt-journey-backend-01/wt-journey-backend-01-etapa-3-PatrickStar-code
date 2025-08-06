@@ -44,8 +44,10 @@ async function getAll(req, res, next) {
   try {
     const { agente_id, status } = parsed.data;
 
-    if (Number.isInteger(agente_id)) {
-      return res.status(404).json({ message: "Deve ser um numero Inteiro" });
+    if (agente_id !== undefined && !Number.isInteger(Number(agente_id))) {
+      return res
+        .status(400)
+        .json({ message: "O agente_id deve ser um número inteiro." });
     }
 
     const casosResult = await casosRepository
