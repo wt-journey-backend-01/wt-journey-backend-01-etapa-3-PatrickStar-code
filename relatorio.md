@@ -1,63 +1,93 @@
 <sup>Esse é um feedback gerado por IA, ele pode conter erros.</sup>
 
-Você tem 5 créditos restantes para usar o sistema de feedback AI.
+Você tem 4 créditos restantes para usar o sistema de feedback AI.
 
 # Feedback para PatrickStar-code:
 
-Nota final: **70.8/100**
+Nota final: **83.7/100**
 
-# Feedback para você, PatrickStar-code! 🚀✨
+# Feedback para PatrickStar-code 🚀
 
-Olá, Patrick! Primeiro, parabéns pelo empenho e pela organização geral do seu projeto! 🎉 Você estruturou bem seu código, dividindo responsabilidades entre controllers, repositories e rotas, o que é essencial para manter a escalabilidade e legibilidade da aplicação. Além disso, adorei ver que você usou o Zod para validação, isso mostra cuidado com a integridade dos dados — muito bom! 👏
-
-Também percebi que você conseguiu implementar várias funcionalidades extras, como a filtragem por status, busca por keywords e o endpoint para obter o agente responsável por um caso. Essas são features bônus que agregam muito valor ao seu projeto, então parabéns por ir além do básico! 🌟
+Olá Patrick! Primeiro, quero te parabenizar pelo esforço e dedicação nessa etapa tão importante da sua jornada! 🎉 Você conseguiu implementar várias funcionalidades essenciais da API com persistência em PostgreSQL, usando Knex.js, validação com Zod e uma arquitetura modular muito bem estruturada. Isso já é um baita avanço! 👏
 
 ---
 
-## Vamos destrinchar alguns pontos importantes para você avançar ainda mais? 🕵️‍♂️🔍
+## O que está brilhando no seu código ✨
 
-### 1. Estrutura de Diretórios — Está no caminho certo! ✅
-
-Sua estrutura está alinhada com o esperado:
-
-```
-├── controllers/
-├── db/
-│   ├── migrations/
-│   ├── seeds/
-│   └── db.js
-├── repositories/
-├── routes/
-└── utils/
-```
-
-Isso é ótimo, pois facilita a manutenção e entendimento do projeto. Continue assim! Se quiser reforçar os conceitos de arquitetura MVC e organização, recomendo este vídeo:  
-👉 [Arquitetura MVC em Node.js](https://youtu.be/bGN_xNc4A1k?si=Nj38J_8RpgsdQ-QH)
+- Sua organização de pastas está **muito bem alinhada** com o padrão esperado, com controllers, repositories, rotas e db separados. Isso facilita muito a manutenção e evolução do projeto.
+- A validação dos dados com Zod está bem feita, com mensagens claras e específicas para cada campo. Isso ajuda muito na experiência do usuário da API.
+- O uso correto dos status HTTP, como 200, 201 e 204, mostra que você entendeu a importância de comunicar bem o resultado das operações.
+- A implementação dos endpoints de filtro simples para casos por status e agente está correta e funcionando. Isso é ótimo, pois já agrega valor real à API!
+- O uso do Knex para consultas básicas está correto, e você estruturou bem as funções nos repositories.
 
 ---
 
-### 2. Configuração do Knex e conexão com o banco — Tudo parece configurado corretamente! ✔️
+## Pontos de atenção para destravar 100% do seu projeto 🔎
 
-Seu `knexfile.js` está bem configurado para diferentes ambientes (`development` e `ci`), usando variáveis de ambiente para conexão. O arquivo `db/db.js` importa essa configuração corretamente e instancia o Knex.
+### 1. Problema fundamental: IDs e tipos inconsistentes entre casos e agentes
 
-**Dica:** Certifique-se que o seu `.env` está com as variáveis `POSTGRES_USER`, `POSTGRES_PASSWORD` e `POSTGRES_DB` devidamente preenchidas, e que o container do PostgreSQL está rodando com `docker-compose up -d`. Isso é fundamental para garantir a conexão com o banco.
-
-Se quiser reforçar o entendimento sobre configuração do banco com Docker e Knex, recomendo:  
-👉 [Configuração de Banco com Docker e Knex](http://googleusercontent.com/youtube.com/docker-postgresql-node)
-
----
-
-### 3. Análise dos Repositórios — Aqui encontrei alguns pontos que impactam diretamente as funcionalidades de criação e atualização de **casos** e **agentes**.
-
-#### a) **Erro no repositório de casos na função `create`**
-
-No arquivo `repositories/casosRepository.js`, sua função `create` está assim:
+Ao analisar seus repositórios e controllers, percebi que a tabela `agentes` está usando IDs numéricos (ex: 1, 2, 3) conforme os seeds e migrations, mas no repositório de casos você trata o campo `agente_id` como se fosse uma string UUID, especialmente no comentário do `casosRepository.js`:
 
 ```js
-async function create(caso) {
+/*
+   {
+        id: "f5fb2ad5-22a8-4cb4-90f2-8733517a0d46",
+        titulo: "homicidio",
+        ...
+        agente_id: "401bccf5-cf9e-489d-8412-446cd169a0f1" 
+    }
+*/
+```
+
+Porém, seus seeds de agentes usam números inteiros para `id`:
+
+```js
+await knex("agentes").insert([
+  { id: 1, nome: "Rommel Carneiro", ... },
+  { id: 2, nome: "Luciana Farias", ... },
+  //...
+]);
+```
+
+E seus controllers e validações esperam que `agente_id` seja um número:
+
+```js
+const CasoSchema = z.object({
+  ...
+  agente_id: z
+    .number({ required_error: "Agente_id é obrigatório." })
+    .min(1, "O campo 'agente_id' é obrigatório."),
+});
+```
+
+**Por que isso é importante?**
+
+- Se os IDs de agentes são números, você deve garantir que o campo `agente_id` em `casos` seja também numérico e que as queries no banco estejam coerentes.
+- Se você misturar UUIDs com números, suas consultas vão falhar, e o banco não vai encontrar os registros corretamente, causando falhas nos endpoints de criação, atualização e deleção de casos.
+- Essa inconsistência pode estar causando falhas nos testes de criação e atualização de casos e agentes.
+
+**Como corrigir?**
+
+- Ajuste os seeds, migrations e schemas para usar um padrão único de ID (ou todos números inteiros, ou todos UUIDs).
+- Se optar por números inteiros, remova qualquer referência a UUIDs no código.
+- Se quiser usar UUIDs, altere as migrations para criar colunas `id` com tipo UUID e gere os IDs corretamente no seed e no código.
+
+---
+
+### 2. Pequeno erro na função `update` do `casosRepository.js`
+
+No seu arquivo `repositories/casosRepository.js`, a função `update` tem um erro sutil, que pode estar impedindo a atualização correta dos casos:
+
+```js
+async function update(id, fieldsToUpdate) {
   try {
-    const created = await db("casos").insert(agente).returning("*");
-    return created[0];
+    const updated = await db("casos")
+      .where({ id: id })
+      .update(fieldsToUpdate, ["*"]);
+    if (!updateAgente || updateAgente.length === 0) {
+      return false;
+    }
+    return updated[0];
   } catch (error) {
     console.log(error);
     return false;
@@ -65,15 +95,28 @@ async function create(caso) {
 }
 ```
 
-**Problema:** Você está tentando inserir o objeto `agente` dentro da tabela `casos`, mas o parâmetro da função é `caso`. Isso indica que você está usando a variável errada no `insert()`. Essa confusão faz com que a inserção falhe silenciosamente e o teste de criação do caso não passe.
-
-**Como corrigir:**
+O problema está na verificação do resultado: você está checando `updateAgente` que não existe nesse escopo. O correto é verificar `updated`:
 
 ```js
-async function create(caso) {
+if (!updated || updated.length === 0) {
+  return false;
+}
+```
+
+Esse deslize pode fazer com que a função retorne `undefined` ou `false` mesmo quando a atualização foi feita, causando respostas erradas na API.
+
+**Correção sugerida:**
+
+```js
+async function update(id, fieldsToUpdate) {
   try {
-    const created = await db("casos").insert(caso).returning("*");
-    return created[0];
+    const updated = await db("casos")
+      .where({ id: id })
+      .update(fieldsToUpdate, ["*"]);
+    if (!updated || updated.length === 0) {
+      return false;
+    }
+    return updated[0];
   } catch (error) {
     console.log(error);
     return false;
@@ -81,53 +124,11 @@ async function create(caso) {
 }
 ```
 
-Esse ajuste é crucial para que o método de criação funcione corretamente e o caso seja salvo no banco.
-
 ---
 
-#### b) **Retorno inconsistente no método `updateAgente`**
+### 3. Validação e conversão de tipos em query params e path params
 
-No `repositories/agentesRepository.js`, seu método `updateAgente` tem essa verificação:
-
-```js
-if (!updateAgente) {
-  return false;
-}
-```
-
-Porém, o método `update` do Knex retorna um array com os registros atualizados. Se não houver registros atualizados, ele retorna um array vazio, que é truthy em JavaScript, o que pode gerar confusão.
-
-Recomendo ajustar para verificar o tamanho do array, assim:
-
-```js
-if (!updateAgente || updateAgente.length === 0) {
-  return false;
-}
-```
-
-Isso evita que você retorne um agente inexistente como se tivesse atualizado com sucesso.
-
----
-
-#### c) **No `deleteCaso` do `casosRepository.js`**
-
-Você tem:
-
-```js
-const deleted = await db("casos").where({ id: id }).del();
-return deleted > 0;
-return true;
-```
-
-Note que o `return true;` depois do `return deleted > 0;` nunca será executado. Essa linha extra pode ser removida para evitar confusão.
-
----
-
-### 4. Validação e Tratamento de Erros — Muito bom o uso do Zod!
-
-Você validou corretamente os dados de entrada nos controllers, o que é fundamental para evitar dados inválidos no banco.
-
-Contudo, na sua função `getAll` do `casosController.js`, você faz esta verificação:
+No controller de casos, você recebe `agente_id` via query string e espera um número, mas no código você faz uma conversão meio solta:
 
 ```js
 if (agente_id !== undefined && !Number.isInteger(Number(agente_id))) {
@@ -135,63 +136,65 @@ if (agente_id !== undefined && !Number.isInteger(Number(agente_id))) {
 }
 ```
 
-Isso é ótimo para garantir que o filtro por agente funcione corretamente.
+Seria interessante validar e converter esse parâmetro antes de usar nas queries para evitar problemas de tipo no banco.
+
+Além disso, em alguns lugares você usa `id` como string (ex: no agentesController), e em outros como número (casosController). O ideal é padronizar isso para evitar erros.
 
 ---
 
-### 5. Testes que falharam indicam que os problemas principais estão relacionados à criação e atualização dos casos e agentes
+### 4. Testes bônus não aprovados indicam que endpoints extras não estão completos
 
-O erro no `create` do `casosRepository` é um dos motivos que bloqueiam a criação correta dos casos. Corrigindo isso, você vai destravar vários testes que envolvem criação e atualização.
+Você implementou corretamente os filtros simples de casos, mas os endpoints bônus para:
 
-Além disso, a forma como você manipula o retorno do Knex em updates pode estar causando falhas nos endpoints de atualização.
+- Buscar agente responsável por caso (`GET /casos/:casos_id/agente`)
+- Buscar casos de um agente
+- Filtragem avançada de agentes por data de incorporação com ordenação
+- Mensagens customizadas para erros
 
----
-
-### 6. Sugestão geral para aprimorar seu código
-
-- **Tratamento de erros:** Em seus repositórios, ao capturar erros, você está fazendo `console.log(error)` e retornando `false` ou `error.where`. Seria interessante padronizar o retorno para sempre `false` ou lançar o erro para o middleware de tratamento geral da API, para garantir que erros inesperados não passem despercebidos.
-
-- **Consistência dos IDs:** Note que no `casos` você usa `id` numérico? Ou UUID? No seed você não tem campo `id` para casos, e no código do controller você valida como `number` (por exemplo, `agente_id` é number). Se você pretende usar UUIDs, precisa ajustar isso para manter consistência. Se for número, tudo bem, só garanta que os migrations e seeds estejam alinhados.
+não estão funcionando. Isso pode estar relacionado à inconsistência de IDs e à lógica incompleta nos repositories e controllers.
 
 ---
 
-## Recursos para você explorar e fortalecer seus conhecimentos 📚
+### 5. Dica extra sobre organização e modularidade
 
-- Para entender melhor o uso do Knex para manipulação dos dados (inserção, atualização, deleção):  
-👉 [Knex Query Builder](https://knexjs.org/guide/query-builder.html)
-
-- Para aprender a criar e executar migrations e seeds corretamente:  
-👉 [Knex Migrations](https://knexjs.org/guide/migrations.html)  
-👉 [Knex Seeds - vídeo tutorial](http://googleusercontent.com/youtube.com/knex-seeds)
-
-- Para aprimorar validação e tratamento de erros em APIs Node.js:  
-👉 [Validação de dados com Zod e tratamento de erros](https://youtu.be/yNDCRAz7CM8?si=Lh5u3j27j_a4w3A_)
-
-- Para entender melhor os códigos de status HTTP e como usá-los corretamente:  
-👉 [HTTP Status 400 - Bad Request](https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Status/400)  
-👉 [HTTP Status 404 - Not Found](https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Status/404)
+Você está usando `express` no início dos repositories, como em `const express = require("express");`, mas esses arquivos não precisam do Express, pois são apenas para acessar o banco. Esse código pode ser removido para deixar o repositório mais limpo e focado.
 
 ---
 
-## Resumo rápido para você focar 🔑
+## Recursos para te ajudar a evoluir 🚀
 
-- Corrija a variável errada no método `create` do `casosRepository` (usar `caso` em vez de `agente`).
-- Ajuste a verificação do retorno do Knex nos métodos de atualização para garantir que o registro realmente foi atualizado.
-- Remova código morto ou redundante (ex: `return true;` após `return deleted > 0;`).
-- Confirme que o `.env` está configurado corretamente e que o container do PostgreSQL está rodando.
-- Padronize o tratamento de erros para melhorar a manutenção e depuração.
-- Verifique consistência dos tipos de IDs usados (números vs UUIDs).
-- Continue usando o Zod para validação e aprimorando as mensagens de erro.
+- Para entender melhor a configuração do banco, migrations e seeds, recomendo fortemente este vídeo:  
+  [Configuração de Banco de Dados com Docker e Knex](http://googleusercontent.com/youtube.com/docker-postgresql-node)
+
+- Para dominar o Knex e suas queries, veja o guia oficial:  
+  [Knex Query Builder](https://knexjs.org/guide/query-builder.html)
+
+- Para garantir que sua API retorne os status HTTP corretos e o tratamento de erros, este vídeo é excelente:  
+  [Manipulação de Requisições e Respostas (Body, Query Params, Status Codes)](https://youtu.be/RSZHvQomeKE)
+
+- Para aprofundar em validação e tratamento de erros com Zod e Express, veja:  
+  [Validação de Dados e Tratamento de Erros na API](https://youtu.be/yNDCRAz7CM8?si=Lh5u3j27j_a4w3A_)
+
+- Para organizar melhor sua aplicação em MVC e manter a modularidade, este vídeo é uma mão na roda:  
+  [Arquitetura MVC em Node.js](https://youtu.be/bGN_xNc4A1k?si=Nj38J_8RpgsdQ-QH)
 
 ---
 
-Patrick, você está no caminho certo, e com esses ajustes seu projeto vai ficar ainda mais robusto e profissional! 💪✨ Continue se dedicando, que a persistência de dados é um passo fundamental para APIs escaláveis e confiáveis. Qualquer dúvida, estou aqui para ajudar! 🚀
+## Resumo rápido para focar 🔥
 
-Um abraço e bora codar! 👨‍💻👩‍💻
+- ⚠️ **Unifique o tipo de ID** entre agentes e casos (números inteiros ou UUIDs) para evitar inconsistências.
+- 🐞 Corrija o erro na função `update` do `casosRepository` para checar o resultado correto da atualização.
+- 🔍 Padronize e valide corretamente os tipos de parâmetros (query e path) para evitar erros inesperados.
+- 🎯 Finalize os endpoints bônus como busca do agente responsável pelo caso e filtros avançados para melhorar a nota.
+- 🧹 Remova imports desnecessários como `express` dos arquivos de repository para manter o código limpo.
 
 ---
 
-Se quiser, dê uma olhada nos recursos que indiquei para consolidar seu aprendizado e avançar com segurança. Até a próxima! 😉
+Patrick, você está no caminho certo! Seu código mostra que você domina os conceitos fundamentais e está aplicando boas práticas. Com esses ajustes, tenho certeza que sua API vai ficar ainda mais robusta e alinhada com os requisitos. Continue assim, firme e forte! 💪🚓
+
+Se precisar de ajuda para entender algum ponto específico, me chama aqui que a gente destrincha juntos! 😉
+
+Abraço e bons códigos! 👨‍💻✨
 
 > Caso queira tirar uma dúvida específica, entre em contato com o Chapter no nosso [discord](https://discord.gg/DryuHVnz).
 
