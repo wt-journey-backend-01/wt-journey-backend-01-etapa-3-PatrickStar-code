@@ -17,7 +17,7 @@ const AgentePartial = AgenteSchema.partial().strict();
 const querySchema = z.object({
   cargo: z.string().optional(),
   sort: z
-    .enum(["dataDeIncorporacao", "-dataDeIncorporacao"], {
+    .string(["dataDeIncorporacao", "-dataDeIncorporacao"], {
       invalid_type_error:
         "O campo 'sort' deve ser 'dataDeIncorporacao' ou '-dataDeIncorporacao'.",
     })
