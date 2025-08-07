@@ -54,7 +54,7 @@ async function search(q) {
 
 async function create(caso) {
   try {
-    const created = await db("casos").insert(agente).returning("*");
+    const created = await db("casos").insert(caso).returning("*");
     return created[0];
   } catch (error) {
     console.log(error);
@@ -79,7 +79,7 @@ async function update(id, fieldsToUpdate) {
     const updated = await db("casos")
       .where({ id: id })
       .update(fieldsToUpdate, ["*"]);
-    if (!updated) {
+    if (!updateAgente || updateAgente.length === 0) {
       return false;
     }
     return updated[0];
@@ -93,7 +93,6 @@ async function deleteCaso(id) {
   try {
     const deleted = await db("casos").where({ id: id }).del();
     return deleted > 0;
-    return true;
   } catch (error) {
     console.log(error);
     return false;

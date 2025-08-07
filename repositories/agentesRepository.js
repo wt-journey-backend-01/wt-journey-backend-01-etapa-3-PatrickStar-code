@@ -60,7 +60,7 @@ async function updateAgente(id, fieldsToUpdate) {
     const updateAgente = await db("agentes")
       .where({ id: id })
       .update(fieldsToUpdate, ["*"]);
-    if (!updateAgente) {
+    if (!updateAgente || updateAgente.length === 0) {
       return false;
     }
     return updateAgente[0];
