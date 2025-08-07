@@ -193,7 +193,12 @@ async function getAgente(req, res, next) {
   try {
     const { casos_id } = req.params;
 
-    const caso = await casosRepository.findById(casos_id);
+    const casosIdNum = Number(casos_id);
+    if (Number.isNaN(casosIdNum)) {
+      return res.status(400).json({ message: "Parâmetro inválido" });
+    }
+
+    const caso = await casosRepository.findById(casosIdNum);
     if (!caso) {
       return res.status(404).json({ message: "Caso inexistente" });
     }

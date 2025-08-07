@@ -3,7 +3,9 @@
  * @returns { Promise<void> }
  */
 exports.seed = async function (knex) {
-  // Deletes ALL existing entries
+  await knex("casos").del();
+
+  // Depois deleta os agentes
   await knex("agentes").del();
   await knex("agentes").insert([
     {

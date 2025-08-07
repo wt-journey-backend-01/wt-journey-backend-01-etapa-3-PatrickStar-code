@@ -62,15 +62,15 @@ async function deleteAgente(id) {
 
 async function updateAgente(id, fieldsToUpdate) {
   try {
-    const updateAgente = await db("agentes")
-      .where({ id: Number(id) })
-      .update(fieldsToUpdate, ["*"]);
-
     if (fieldsToUpdate.dataDeIncorporacao) {
       fieldsToUpdate.dataDeIncorporacao = new Date(
         fieldsToUpdate.dataDeIncorporacao
       );
     }
+
+    const updateAgente = await db("agentes")
+      .where({ id: Number(id) })
+      .update(fieldsToUpdate, ["*"]);
 
     if (!updateAgente || updateAgente.length === 0) {
       return false;

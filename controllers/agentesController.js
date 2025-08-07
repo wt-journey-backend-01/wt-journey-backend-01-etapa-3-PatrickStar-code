@@ -2,17 +2,13 @@ const { z } = require("zod");
 const express = require("express");
 const agentesRepository = require("../repositories/agentesRepository");
 const errorHandler = require("../utils/errorHandler");
+const casosRepository = require("../repositories/casosRepository");
 
 const AgenteSchema = z.object({
   nome: z.string().min(1, "O campo 'nome' não pode ser vazio."),
-  dataDeIncorporacao: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, {
-      message: "O campo 'dataDeIncorporacao' deve ser no formato 'YYYY-MM-DD'.",
-    })
-    .refine((date) => new Date(date) <= new Date(), {
-      message: "A data de incorporação não pode ser no futuro.",
-    }),
+  dataDeIncorporacao: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, {
+    message: "O campo 'dataDeIncorporacao' deve ser no formato 'YYYY-MM-DD'.",
+  }),
   cargo: z.string().min(1, "O campo 'cargo' não pode ser vazio."),
 });
 
@@ -25,6 +21,7 @@ const querySchema = z.object({
       invalid_type_error:
         "O campo 'sort' deve ser 'dataDeIncorporacao' ou '-dataDeIncorporacao'.",
     })
+    .trim()
     .optional(),
 });
 
@@ -86,6 +83,15 @@ async function create(req, res, next) {
 async function deleteAgente(req, res, next) {
   try {
     const { id } = req.params;
+
+    const inCase = await casosRepository.findByAgente(id);
+    if (inCase) {
+      return res.status(400).json({
+        message:
+          "Agente possui casos,Delete o caso vinculado ao agente primeiro.",
+      });
+    }
+
     const deleted = await agentesRepository.deleteAgente(id);
     if (!deleted) {
       return res.status(404).json({ message: "Agente inexistente" });
