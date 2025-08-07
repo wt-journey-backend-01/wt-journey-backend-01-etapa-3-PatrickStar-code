@@ -72,7 +72,10 @@ async function create(req, res, next) {
     }
 
     const agente = await agentesRepository.create(parsed.data);
-
+    console.log(agente);
+    if (!agente) {
+      return res.status(500).json({ message: "Erro ao criar agente." });
+    }
     return res.status(201).json(agente);
   } catch (error) {
     next(error);
@@ -83,14 +86,10 @@ async function deleteAgente(req, res, next) {
   try {
     const { id } = req.params;
 
-    const inCase = await casosRepository.findByAgente(id);
-    if (inCase) {
-      return res.status(400).json({
-        message:
-          "Agente possui casos,Delete o caso vinculado ao agente primeiro.",
-      });
+    const inCase = await casosRepository.deleteByAgente(id);
+    if (!inCase) {
+      console.log("Agente não tem casos");
     }
-
     const deleted = await agentesRepository.deleteAgente(id);
     if (!deleted) {
       return res.status(404).json({ message: "Agente inexistente" });

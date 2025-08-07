@@ -90,6 +90,16 @@ async function deleteCaso(id) {
   }
 }
 
+async function deleteByAgente(id) {
+  try {
+    const deleted = await db("casos").where({ agente_id: id }).del();
+    return deleted > 0;
+  } catch (error) {
+    console.log(error);
+    return false;
+  }
+}
+
 module.exports = {
   getAll,
   search,
@@ -97,4 +107,5 @@ module.exports = {
   findById,
   deleteCaso,
   update,
+  deleteByAgente,
 };
