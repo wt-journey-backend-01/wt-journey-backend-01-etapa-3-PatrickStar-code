@@ -14,9 +14,7 @@ async function findAll({ cargo, sort } = {}) {
         search.orderBy("dataDeIncorporacao", "desc");
       }
     }
-    if (!search) {
-      return false;
-    }
+
     return await search;
   } catch (error) {
     console.log(error);

@@ -50,7 +50,7 @@ async function findAll(req, res, next) {
 async function findById(req, res, next) {
   try {
     const id = req.params.id;
-    const agente = await agentesRepository.find(id);
+    const agente = await agentesRepository.findById(id);
     if (!agente) {
       return res.status(404).json({ message: "Agente inexistente" });
     }
@@ -105,7 +105,7 @@ async function updateAgente(req, res, next) {
       return res.status(400).json({ message: parsed.error.issues[0].message });
     }
 
-    const agenteUpdated = await agentesRepository;
+    const agenteUpdated = await agentesRepository.updateAgente(id, parsed.data);
     if (!agenteUpdated) {
       return res.status(404).json({ message: "Agente inexistente" });
     }

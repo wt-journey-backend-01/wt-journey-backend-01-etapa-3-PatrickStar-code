@@ -194,12 +194,10 @@ async function getAgente(req, res, next) {
   try {
     const { casos_id } = req.params;
 
-    const caso = await casosRepository.findById(casos_id).then((caso) => {
-      if (!caso) {
-        return res.status(404).json({ message: "Caso inexistente" });
-      }
-      return caso;
-    });
+    const caso = await casosRepository.findById(casos_id);
+    if (!caso) {
+      return res.status(404).json({ message: "Caso inexistente" });
+    }
 
     const agente = await agentesRepository.findById(caso.agente_id);
     if (!agente) {
@@ -210,7 +208,6 @@ async function getAgente(req, res, next) {
     next(error);
   }
 }
-
 module.exports = {
   getAll,
   search,
