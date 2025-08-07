@@ -6,9 +6,16 @@ const casosRepository = require("../repositories/casosRepository");
 
 const AgenteSchema = z.object({
   nome: z.string().min(1, "O campo 'nome' não pode ser vazio."),
-  dataDeIncorporacao: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, {
-    message: "O campo 'dataDeIncorporacao' deve ser no formato 'YYYY-MM-DD'.",
-  }),
+  dataDeIncorporacao: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, {
+      message: "O campo 'dataDeIncorporacao' deve ser no formato 'YYYY-MM-DD'.",
+    })
+    .refine((dateStr) => {
+      const date = new Date(dateStr);
+      const now = new Date();
+      return date <= now;
+    }, "A data de incorporação não pode ser no futuro."),
   cargo: z.string().min(1, "O campo 'cargo' não pode ser vazio."),
 });
 
@@ -16,13 +23,7 @@ const AgentePartial = AgenteSchema.partial().strict();
 
 const querySchema = z.object({
   cargo: z.string().optional(),
-  sort: z
-    .string(["dataDeIncorporacao", "-dataDeIncorporacao"], {
-      invalid_type_error:
-        "O campo 'sort' deve ser 'dataDeIncorporacao' ou '-dataDeIncorporacao'.",
-    })
-    .trim()
-    .optional(),
+  sort: z.enum(["dataDeIncorporacao", "-dataDeIncorporacao"]).optional(),
 });
 
 async function findAll(req, res, next) {

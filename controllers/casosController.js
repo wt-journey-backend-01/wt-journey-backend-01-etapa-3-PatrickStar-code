@@ -191,9 +191,9 @@ async function patch(req, res, next) {
 
 async function getAgente(req, res, next) {
   try {
-    const { casos_id } = req.params;
+    const { caso_id } = req.params;
 
-    const casosIdNum = Number(casos_id);
+    const casosIdNum = Number(caso_id);
     if (Number.isNaN(casosIdNum)) {
       return res.status(400).json({ message: "Parâmetro inválido" });
     }
