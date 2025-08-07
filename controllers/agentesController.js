@@ -65,14 +65,7 @@ async function create(req, res, next) {
       return res.status(400).json({ message: parsed.error.issues[0].message });
     }
 
-    if ("id" in req.body) {
-      return res
-        .status(400)
-        .json({ message: "O campo 'id' nao pode ser enviado." });
-    }
-
     const agente = await agentesRepository.create(parsed.data);
-    console.log(agente);
     if (!agente) {
       return res.status(500).json({ message: "Erro ao criar agente." });
     }
