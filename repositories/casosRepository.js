@@ -4,7 +4,7 @@ async function getAll({ agente_id, status } = {}) {
   try {
     const search = db.select("*").from("casos");
     if (agente_id) {
-      search.where({ agente_id: Number(agente_id) });
+      search.where({ agente_id: agente_id });
     }
     if (status) {
       search.where({ status: status });

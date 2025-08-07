@@ -36,7 +36,11 @@ async function findById(id) {
 
 async function create(agente) {
   try {
-    const created = await db("agentes").insert(agente).returning("*");
+    const agenteToInsert = {
+      ...agente,
+      dataDeIncorporacao: new Date(agente.dataDeIncorporacao),
+    };
+    const created = await db("agentes").insert(agenteToInsert).returning("*");
     return created[0];
   } catch (error) {
     console.log(error);
@@ -61,6 +65,13 @@ async function updateAgente(id, fieldsToUpdate) {
     const updateAgente = await db("agentes")
       .where({ id: Number(id) })
       .update(fieldsToUpdate, ["*"]);
+
+    if (fieldsToUpdate.dataDeIncorporacao) {
+      fieldsToUpdate.dataDeIncorporacao = new Date(
+        fieldsToUpdate.dataDeIncorporacao
+      );
+    }
+
     if (!updateAgente || updateAgente.length === 0) {
       return false;
     }
