@@ -1,4 +1,3 @@
-const express = require("express");
 const db = require("../db/db");
 
 async function findAll({ cargo, sort } = {}) {
@@ -18,20 +17,20 @@ async function findAll({ cargo, sort } = {}) {
     return await search;
   } catch (error) {
     console.log(error);
-    return error.where;
+    return error;
   }
 }
 
 async function findById(id) {
   try {
-    const findIndex = await db("agentes").where({ id: id });
+    const findIndex = await db("agentes").where({ id: Number(id) });
     if (findIndex.length === 0) {
       return false;
     }
     return findIndex[0];
   } catch (error) {
     console.log(error);
-    return error.where;
+    return error;
   }
 }
 
@@ -41,16 +40,18 @@ async function create(agente) {
     return created[0];
   } catch (error) {
     console.log(error);
-    return error.where;
+    return error;
   }
 }
 
 async function deleteAgente(id) {
   try {
-    const deleted = await db("agentes").where({ id: id }).del();
+    const deleted = await db("agentes")
+      .where({ id: Number(id) })
+      .del();
     return deleted > 0;
   } catch (error) {
-    console.log(error.where);
+    console.log(error);
     return false;
   }
 }
@@ -58,14 +59,14 @@ async function deleteAgente(id) {
 async function updateAgente(id, fieldsToUpdate) {
   try {
     const updateAgente = await db("agentes")
-      .where({ id: id })
+      .where({ id: Number(id) })
       .update(fieldsToUpdate, ["*"]);
     if (!updateAgente || updateAgente.length === 0) {
       return false;
     }
     return updateAgente[0];
   } catch (error) {
-    console.log(error.where);
+    console.log(error);
     return false;
   }
 }

@@ -4,7 +4,7 @@ async function getAll({ agente_id, status } = {}) {
   try {
     const search = db.select("*").from("casos");
     if (agente_id) {
-      search.where({ agente_id: agente_id });
+      search.where({ agente_id: Number(agente_id) });
     }
     if (status) {
       search.where({ status: status });
@@ -25,9 +25,9 @@ async function search(q) {
       .select("*")
       .from("casos")
       .where(function () {
-        this.where("titulo", "like", `%${q}%`).orWhere(
+        this.where("titulo", "ilike", `%${q}%`).orWhere(
           "descricao",
-          "like",
+          "ilike",
           `%${q}%`
         );
       });
@@ -52,13 +52,13 @@ async function create(caso) {
 }
 async function findById(id) {
   try {
-    const findIndex = await db("casos").where({ id: id });
+    const findIndex = await db("casos").where({ id: Number(id) });
     if (findIndex.length === 0) {
       return false;
     }
     return findIndex[0];
   } catch (error) {
-    console.log(error.where);
+    console.log(error);
     return false;
   }
 }
@@ -66,7 +66,7 @@ async function findById(id) {
 async function update(id, fieldsToUpdate) {
   try {
     const updated = await db("casos")
-      .where({ id: id })
+      .where({ id: Number(id) })
       .update(fieldsToUpdate, ["*"]);
     if (!updated || updated.length === 0) {
       return false;
@@ -80,7 +80,9 @@ async function update(id, fieldsToUpdate) {
 
 async function deleteCaso(id) {
   try {
-    const deleted = await db("casos").where({ id: id }).del();
+    const deleted = await db("casos")
+      .where({ id: Number(id) })
+      .del();
     return deleted > 0;
   } catch (error) {
     console.log(error);

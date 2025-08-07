@@ -9,7 +9,7 @@ const errorHandler = require("../utils/errorHandler");
 const enumStatus = ["aberto", "solucionado"];
 
 const QueryParamsSchema = z.object({
-  agente_id: z.string().optional(),
+  agente_id: z.number().optional(),
   status: z
     .enum(["aberto", "solucionado"], {
       required_error: "Status é obrigatório.",
