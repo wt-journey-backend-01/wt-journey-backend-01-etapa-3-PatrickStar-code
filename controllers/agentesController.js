@@ -72,9 +72,7 @@ async function create(req, res, next) {
     }
 
     const agente = await agentesRepository.create(parsed.data);
-    if (!agente) {
-      return res.status(500).json({ message: "Erro ao criar agente." });
-    }
+
     return res.status(201).json(agente);
   } catch (error) {
     next(error);
