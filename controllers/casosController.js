@@ -90,7 +90,6 @@ async function create(req, res, next) {
     }
     return res.status(201).json(caso);
   } catch (error) {
-    return res.status(500).json({ message: "Erro ao criar caso." });
     next(error);
   }
 }

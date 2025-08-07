@@ -110,7 +110,7 @@ router.delete("/:id", agentesController.deleteAgente);
 
 /**
  * @swagger
- * /{id}:
+ * agentes/{id}:
  *   put:
  *     summary: Atualiza todos os dados de um agente
  *     tags: [Agentes]
@@ -148,7 +148,7 @@ router.put("/:id", agentesController.updateAgente);
 
 /**
  * @swagger
- * /{id}:
+ * agentes/{id}:
  *   patch:
  *     summary: Atualiza parcialmente os dados de um agente
  *     tags: [Agentes]

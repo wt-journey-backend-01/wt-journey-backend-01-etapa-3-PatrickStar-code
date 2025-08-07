@@ -37,7 +37,7 @@ async function findById(id) {
 
 async function create(agente) {
   try {
-    const created = await db("agentes").insert(agente, ["*"]);
+    const created = await db("agentes").insert(agente).returning("*");
     return created[0];
   } catch (error) {
     console.log(error);
@@ -47,11 +47,8 @@ async function create(agente) {
 
 async function deleteAgente(id) {
   try {
-    const deleted = await db("agentes").where({ id: id }).del(["*"]);
-    if (!deleted) {
-      return false;
-    }
-    return true;
+    const deleted = await db("agentes").where({ id: id }).del();
+    return deleted > 0;
   } catch (error) {
     console.log(error.where);
     return false;

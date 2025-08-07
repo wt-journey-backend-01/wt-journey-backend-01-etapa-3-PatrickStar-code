@@ -32,9 +32,16 @@ async function getAll({ agente_id, status } = {}) {
 
 async function search(q) {
   try {
-    const query = db.select("*").from("casos");
-    query.where("titulo", "like", `%${q}%`);
-    query.orWhere("descricao", "like", `%${q}%`);
+    const query = db
+      .select("*")
+      .from("casos")
+      .where(function () {
+        this.where("titulo", "like", `%${q}%`).orWhere(
+          "descricao",
+          "like",
+          `%${q}%`
+        );
+      });
     if (!query) {
       return false;
     }
@@ -47,10 +54,7 @@ async function search(q) {
 
 async function create(caso) {
   try {
-    const created = await db("casos").insert(caso, ["*"]);
-    if (!created) {
-      return false;
-    }
+    const created = await db("casos").insert(agente).returning("*");
     return created[0];
   } catch (error) {
     console.log(error);
@@ -87,10 +91,8 @@ async function update(id, fieldsToUpdate) {
 
 async function deleteCaso(id) {
   try {
-    const deleted = await db("casos").where({ id: id }).del(["*"]);
-    if (!deleted) {
-      return false;
-    }
+    const deleted = await db("casos").where({ id: id }).del();
+    return deleted > 0;
     return true;
   } catch (error) {
     console.log(error);
