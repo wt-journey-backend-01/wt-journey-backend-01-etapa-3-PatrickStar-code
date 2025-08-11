@@ -38,7 +38,7 @@ async function create(agente) {
   try {
     const agenteToInsert = {
       ...agente,
-      dataDeIncorporacao: new Date(agente.dataDeIncorporacao),
+      dataDeIncorporacao: agente.dataDeIncorporacao,
     };
     const created = await db("agentes").insert(agenteToInsert).returning("*");
     return created[0];
@@ -63,9 +63,7 @@ async function deleteAgente(id) {
 async function updateAgente(id, fieldsToUpdate) {
   try {
     if (fieldsToUpdate.dataDeIncorporacao) {
-      fieldsToUpdate.dataDeIncorporacao = new Date(
-        fieldsToUpdate.dataDeIncorporacao
-      );
+      fieldsToUpdate.dataDeIncorporacao = fieldsToUpdate.dataDeIncorporacao;
     }
 
     const updateAgente = await db("agentes")
