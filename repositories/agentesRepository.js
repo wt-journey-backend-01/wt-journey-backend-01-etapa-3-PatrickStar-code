@@ -36,11 +36,7 @@ async function findById(id) {
 
 async function create(agente) {
   try {
-    const agenteToInsert = {
-      ...agente,
-      dataDeIncorporacao: agente.dataDeIncorporacao,
-    };
-    const created = await db("agentes").insert(agenteToInsert).returning("*");
+    const created = await db("agentes").insert(agente).returning("*");
     return created[0];
   } catch (error) {
     console.log(error);
